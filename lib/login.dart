@@ -57,6 +57,23 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 28),
+                  Center(
+                    child: Column(
+                      children: [
+                        Image.asset('images/AgroGoais.png', height: 100),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Agro Tech Goiás',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1B5E20),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
                   _buildTextField('Email', _emailController),
                   const SizedBox(height: 16),
                   _buildTextField('Senha', _senhaController, obscureText: true),

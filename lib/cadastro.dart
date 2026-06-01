@@ -60,7 +60,7 @@ class _CadastroPageState extends State<CadastroPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 80),
                   _buildTextField('Nome completo', _nomeController),
                   const SizedBox(height: 16),
                   _buildTextField('Email', _emailController),
@@ -71,16 +71,20 @@ class _CadastroPageState extends State<CadastroPage> {
                     String? error = await _cadastrarUsuario();
                     if (!mounted) return;
                     if (error != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(error)),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(error)));
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Cadastro realizado com sucesso')),
+                        const SnackBar(
+                          content: Text('Cadastro realizado com sucesso'),
+                        ),
                       );
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const DashboardScreen(),
+                        ),
                       );
                     }
                   }),

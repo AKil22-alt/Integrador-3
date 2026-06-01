@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:integrador/services/chat_service.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -8,64 +9,61 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  // cria uma variavel do tipo TextEditingController _controller
   final TextEditingController _controller = TextEditingController();
+  final List<Map<String, dynamic>> _messages = [];
+  bool _loading = false;
 
-  // Cria lista com mensagens
-  final List<Map<String,dynamic>> _messages=[
-    {
-      'text': 'Tipos de solos agricola',
-      'isMe':true,
-      'time':'5:20 PM',
-    },
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
-    {
-      'text': 'Calcario e Argiloso',
-      'isMe':false,
-      'time':'5:20 PM',
-    },
-   
+  Future<void> _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
 
-   {
-      'text': 'Qual a melhor semente para plantar em maio',
-      'isMe':true,
-      'time':'5:22 PM',
-    },
-
-    {
-      'text': 'Agro e IoT',
-      'isMe':false,
-      'time':'5:25 PM',
-    },
-
-
-    
-
-  ];
-
-  void _sendMessage(){
-    if(_controller.text.trim().isEmpty)return;
     setState(() {
       _messages.add({
-        'text':_controller.text.trim(),
-        'isMe':true,
-        // pega a hora da mensagem digitada
-        'time':TimeOfDay.now().format(context)
+        'text': text,
+        'isMe': true,
+        'time': TimeOfDay.now().format(context),
       });
       _controller.clear();
+      _loading = true;
+    });
+
+    try {
+      final response = await ChatService.sendMessage(text);
+      if (!mounted) return;
+      setState(() {
+        _messages.add({
+          'text': response,
+          'isMe': false,
+          'time': TimeOfDay.now().format(context),
+        });
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro no chatbot: ${error.toString()}'),
+          backgroundColor: Colors.red[700],
+        ),
+      );
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
     });
   }
 
-  
-
-    // Função para limpar as mensagens
-    void _limparMensagens(){
-      setState(() {
-        _messages.clear();
-      });
-
-    }
-  
+  void _clearMessages() {
+    setState(() {
+      _messages.clear();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,8 +108,20 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       
                       ),
-                      IconButton(onPressed: _sendMessage, icon: Icon(Icons.send,color: Colors.teal,)),
-                      IconButton(onPressed: _limparMensagens, icon: Icon(Icons.clear,color: Colors.teal,)),
+                      _loading
+                          ? const SizedBox(
+                              width: 40,
+                              height: 40,
+                              child: Padding(
+                                padding: EdgeInsets.all(10),
+                                child: CircularProgressIndicator(strokeWidth: 2.5),
+                              ),
+                            )
+                          : IconButton(
+                              onPressed: _sendMessage,
+                              icon: const Icon(Icons.send, color: Colors.teal),
+                            ),
+                      IconButton(onPressed: _clearMessages, icon: const Icon(Icons.clear, color: Colors.teal)),
                   ],
                 ),
                 )
