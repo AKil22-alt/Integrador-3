@@ -38,6 +38,7 @@ dependencies:
   page_transition: ^2.1.0
   shared_preferences: ^2.2.3
   http: ^1.6.0
+  flutter_dotenv: ^5.0.2
 
 dev_dependencies:
   flutter_test:

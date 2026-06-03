@@ -1,18 +1,23 @@
 import 'dart:convert';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class ChatService {
-  /// Atualize esta URL algum dia para o endereço do Langflow.
-  static const String baseUrl = 'http://<LANGFLOW_URL>';
+  /// O endereço do Langflow deve estar em .env como LANGFLOW_URL.
+  static final String baseUrl = dotenv.env['LANGFLOW_URL']?.trim() ?? '';
 
   /// Endpoint Langflow.
   static const String chatEndpoint = '/api/v1/chat/completions';
 
-  /// Autenticação Langflow.
-  static const String? apiKey = null;
+  /// A chave de API do Langflow/OpenAI deve estar em .env como LANGFLOW_API_KEY.
+  static final String? apiKey = dotenv.env['LANGFLOW_API_KEY']?.trim();
 
   static Future<String> sendMessage(String message) async {
+    if (baseUrl.isEmpty) {
+      throw Exception('LANGFLOW_URL não definido em .env');
+    }
+
     final uri = Uri.parse('$baseUrl$chatEndpoint');
 
     final headers = <String, String>{
@@ -31,7 +36,10 @@ class ChatService {
       'max_tokens': 500,
     });
 
-    final response = await http.post(uri, headers: headers, body: body);
+    final response = await http.post(uri, headers: headers, body: body).timeout(
+      const Duration(seconds: 20),
+      onTimeout: () => throw Exception('Tempo limite excedido ao enviar a mensagem.'),
+    );
 
     if (response.statusCode != 200) {
       throw Exception('Falha no chat: ${response.statusCode} ${response.reasonPhrase}');
@@ -43,9 +51,10 @@ class ChatService {
 
   static String _parseChatResponse(dynamic data) {
     if (data is Map<String, dynamic>) {
-      if (data['message'] is String) return data['message'];
-      if (data['response'] is String) return data['response'];
-      if (data['output'] is String) return data['output'];
+      if (data['message'] is String) return data['message'] as String;
+      if (data['response'] is String) return data['response'] as String;
+      if (data['output'] is String) return data['output'] as String;
+
       if (data['choices'] is List && data['choices'].isNotEmpty) {
         final first = data['choices'][0];
         if (first is Map<String, dynamic>) {
