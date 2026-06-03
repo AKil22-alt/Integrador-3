@@ -3,14 +3,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ChatService {
-  /// Atualize esta URL para o endereço do Langflow que expõe o endpoint de chat.
-  /// Exemplo: http://192.168.0.100:8686
+  /// Atualize esta URL algum dia para o endereço do Langflow.
   static const String baseUrl = 'http://<LANGFLOW_URL>';
 
-  /// Ajuste este endpoint conforme a configuração do seu Langflow.
+  /// Endpoint Langflow.
   static const String chatEndpoint = '/api/v1/chat/completions';
 
-  /// Se o Langflow exigir autenticação, configure aqui.
+  /// Autenticação Langflow.
   static const String? apiKey = null;
 
   static Future<String> sendMessage(String message) async {

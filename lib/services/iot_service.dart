@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SensorReadings {
   final double temperature;
@@ -88,6 +90,31 @@ class IotService {
   static const String dataEndpoint = '/data';
 
   static Future<SensorReadings> fetchSensorReadings() async {
+    // Se estiver em modo demonstração, retornar dados simulados localmente
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final demo = prefs.getBool('demo_mode') ?? false;
+      if (demo) {
+        final now = DateTime.now();
+        final rnd = Random(now.millisecondsSinceEpoch);
+        final double temperature = 18 + rnd.nextDouble() * 12; // 18..30
+        final double humidityAir = 35 + rnd.nextDouble() * 50; // 35..85
+        final double soilMoisture = 25 + rnd.nextDouble() * 60; // 25..85
+        final bool pumpOn = rnd.nextBool();
+
+        return SensorReadings(
+          temperature: double.parse(temperature.toStringAsFixed(1)),
+          humidityAir: double.parse(humidityAir.toStringAsFixed(1)),
+          soilMoisture: double.parse(soilMoisture.toStringAsFixed(1)),
+          pumpOn: pumpOn,
+          timestamp: now,
+          sensorId: 'DEMO_SENSOR',
+        );
+      }
+    } catch (_) {
+      // se falhar ao verificar prefs, cair para modo real
+    }
+
     final uri = Uri.parse('$baseUrl$dataEndpoint');
     final response = await http.get(uri, headers: {'Content-Type': 'application/json'});
 
@@ -112,6 +139,15 @@ class IotService {
   }
 
   static Future<void> sendPumpCommand(bool activate) async {
+    // Em modo demonstração apenas simula o envio sem fazer requisição
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final demo = prefs.getBool('demo_mode') ?? false;
+      if (demo) return; // ignora envio real em demonstração
+    } catch (_) {
+      // ignore
+    }
+
     final uri = Uri.parse('$baseUrl$dataEndpoint');
     final body = jsonEncode({
       'sensorId': 'REPLACE_WITH_SENSOR_ID',

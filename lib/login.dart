@@ -33,11 +33,20 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    // Modo demonstração
+    if (email == 'Demonstração' && senha == '123456') {
+      await prefs.setBool('demo_mode', true);
+      return null; // sucesso em modo demonstração
+    }
+
     String? senhaSalva = prefs.getString(email);
 
     if (senhaSalva == null || senhaSalva != senha) {
       return 'Email ou senha incorretos';
     }
+
+    // Login normal: desativa modo demonstração caso estivesse ativo
+    await prefs.setBool('demo_mode', false);
 
     return null; // Success
   }

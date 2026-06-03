@@ -103,7 +103,7 @@ class _ColetaDadosScreenState extends State<ColetaDadosScreen> {
           children: [
             Image.asset('images/AgroGoais.png', height: 34),
             const SizedBox(width: 10),
-            const Text('Monitoramento AgroGoais'),
+            const Text('Monitoramento'),
           ],
         ),
       ),
