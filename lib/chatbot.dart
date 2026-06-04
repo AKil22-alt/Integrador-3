@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:integrador/services/chat_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -10,77 +12,97 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
-  final List<ChatMessage> _messages = [];
-  bool _loading = false;
+  final List<Map<String, dynamic>> _messages = [];
+  bool _isLoading = false; // Controle para mostrar que o bot está "digitando"
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
+  void _sendMessage() async {
+    final apiKey = dotenv.env['LANGFLOW_API_KEY'];
+    final userMessage = _controller.text.trim();
+    const String url = "http://localhost:7860/api/v1/run/d60cfa5c-700c-4a53-b2d6-8d8b1b2bc06a";
 
-  Future<void> _sendMessage([String? submittedText]) async {
-    final text = (submittedText ?? _controller.text).trim();
-    if (text.isEmpty) return;
+    if (apiKey == null || apiKey.isEmpty) {
+      _showError("LangFlow Api Key não encontrada no .env");
+      return;
+    }
+
+    if (userMessage.isEmpty) return;
+
+    // Captura o tempo antes da chamada assíncrona
+    final timeNow = TimeOfDay.now().format(context);
 
     setState(() {
-      _messages.add(
-        ChatMessage(
-          text: text,
-          isMe: true,
-          time: TimeOfDay.now().format(context),
-        ),
-      );
+      _messages.add({
+        'text': userMessage,
+        'isMe': true,
+        'time': timeNow,
+      });
       _controller.clear();
-      _loading = true;
+      _isLoading = true; // Ativa o indicador de carregamento
     });
 
-    _scrollToBottom();
-
     try {
-      final response = await ChatService.sendMessage(text);
-      if (!mounted) return;
-      setState(() {
-        _messages.add(
-          ChatMessage(
-            text: response,
-            isMe: false,
-            time: TimeOfDay.now().format(context),
-          ),
-        );
-      });
-      _scrollToBottom();
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro no chatbot: ${error.toString()}'),
-          backgroundColor: Colors.red[700],
-        ),
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey
+        },
+        body: jsonEncode({
+          "input_value": userMessage,
+          "output_type": "chat",
+          "input_type": "chat"
+        }),
       );
-    } finally {
+
+      // Verificação de segurança obrigatória no Flutter moderno após um await
+      if (!mounted) return; 
+
+      final botTime = TimeOfDay.now().format(context);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+        print("Resposta da API: $decoded");
+        
+        final botReply = decoded["outputs"]?[0]?["outputs"]?[0]?["results"]?["message"]?["text"] ?? "Não consegui entender!";
+        
+        setState(() {
+          _isLoading = false;
+          _messages.add({
+            'text': botReply,
+            'isMe': false,
+            'time': botTime
+          });
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+          _messages.add({
+            'text': 'Erro ao obter resposta do assistente (Status: ${response.statusCode})',
+            'isMe': false,
+            'time': botTime
+          });
+        });
+      }
+    } catch (e) {
       if (!mounted) return;
       setState(() {
-        _loading = false;
+        _isLoading = false;
+        _messages.add({
+          'text': 'Erro de conexão: $e',
+          'isMe': false,
+          'time': TimeOfDay.now().format(context)
+        });
       });
     }
   }
 
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
-  void _clearMessages() {
+  void _limparMessages() {
     setState(() {
       _messages.clear();
     });
@@ -89,114 +111,125 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade100, // Fundo leve para destacar mensagens
       appBar: AppBar(
-        backgroundColor: Colors.green[700],
-        title: const Text('Chatbot AgroTech'),
-        centerTitle: true,
+        backgroundColor: Colors.green.shade700, // Cor verde solicitada
+        elevation: 2,
+        title: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Image.asset("images/logo_chat.png", height: 40),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Chat Agro Tech',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            onPressed: _limparMessages,
+            icon: const Icon(Icons.delete_outline, color: Colors.white),
+            tooltip: 'Limpar Conversa',
+          )
+        ],
       ),
-      backgroundColor: const Color(0xFFE8F5E9),
       body: Column(
         children: [
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final msg = _messages[index];
+                return MessageBubble(
+                  text: msg['text'],
+                  isMe: msg['isMe'],
+                  time: msg['time'],
+                );
+              },
+            ),
+          ),
+          
+          // Indicador de digitação
+          if (_isLoading)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  const SizedBox(width: 16),
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text("Assistente digitando...", style: TextStyle(color: Colors.grey.shade600, fontStyle: FontStyle.italic)),
+                ],
+              ),
+            ),
+
+          // Área de input de texto
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.green[700],
+              color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
+                  offset: const Offset(0, -2),
+                )
               ],
             ),
-            child: const Text(
-              'Converse com o assistente virtual para obter informações sobre o seu sistema de irrigação, sensores e controle remoto.',
-              style: TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
-            ),
-          ),
-          Expanded(
-            child: _messages.isEmpty
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24),
-                      child: Text(
-                        'Envie uma mensagem para começar. O chatbot responde perguntas sobre o sistema de irrigação inteligente e monitoramento.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 14, color: Colors.black54),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(24),
                       ),
-                    ),
-                  )
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = _messages[index];
-                      return MessageBubble(
-                        text: msg.text,
-                        isMe: msg.isMe,
-                        time: msg.time,
-                      );
-                    },
-                  ),
-          ),
-          Container(
-            color: Colors.green[50],
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: _sendMessage,
-                    decoration: InputDecoration(
-                      hintText: 'Digite sua pergunta',
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
+                      child: TextField(
+                        controller: _controller,
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _sendMessage(),
+                        decoration: const InputDecoration(
+                          hintText: 'Digite sua mensagem...',
+                          hintStyle: TextStyle(color: Colors.grey),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                if (_loading)
-                  const SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Center(
-                      child: CircularProgressIndicator(strokeWidth: 2.8),
+                  const SizedBox(width: 8),
+                  CircleAvatar(
+                    backgroundColor: Colors.green.shade600,
+                    radius: 24,
+                    child: IconButton(
+                      onPressed: _sendMessage,
+                      icon: const Icon(Icons.send, color: Colors.white),
                     ),
-                  )
-                else ...[
-                  IconButton(
-                    onPressed: () => _sendMessage(),
-                    icon: const Icon(Icons.send, color: Colors.green),
                   ),
-                  IconButton(
-                    onPressed: _clearMessages,
-                    icon: const Icon(Icons.clear, color: Colors.green),
-                  ),
-                ]
-              ],
+                ],
+              ),
             ),
-          ),
+          )
         ],
       ),
     );
   }
-}
-
-class ChatMessage {
-  final String text;
-  final bool isMe;
-  final String time;
-
-  ChatMessage({required this.text, required this.isMe, required this.time});
 }
 
 class MessageBubble extends StatelessWidget {
@@ -204,44 +237,53 @@ class MessageBubble extends StatelessWidget {
   final bool isMe;
   final String time;
 
-  const MessageBubble({super.key, required this.text, required this.isMe, required this.time});
+  const MessageBubble({
+    required this.text,
+    required this.isMe,
+    required this.time,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
+        // Limita a largura máxima do balão para não ocupar a tela toda
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
         margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isMe ? Colors.green[100] : Colors.white,
+          color: isMe ? Colors.green.shade100 : Colors.white,
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(isMe ? 18 : 4),
-            topRight: Radius.circular(isMe ? 4 : 18),
-            bottomLeft: const Radius.circular(18),
-            bottomRight: const Radius.circular(18),
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            // Cantos assimétricos dependendo de quem envia
+            bottomLeft: isMe ? const Radius.circular(16) : const Radius.circular(2),
+            bottomRight: isMe ? const Radius.circular(2) : const Radius.circular(16),
           ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
+              blurRadius: 4,
+              offset: const Offset(1, 2),
+            )
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             Text(
               text,
-              style: const TextStyle(fontSize: 15, height: 1.4, color: Colors.black87),
+              style: const TextStyle(fontSize: 15, color: Colors.black87),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               time,
-              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-            ),
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+            )
           ],
         ),
       ),

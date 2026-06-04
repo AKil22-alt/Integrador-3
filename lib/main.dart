@@ -1,18 +1,23 @@
-// importanto as bibliotecas necessárias para o funcionamento do aplicativo
+// importando as bibliotecas necessárias para o funcionamento do aplicativo
 import 'package:flutter/material.dart';
 import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'login.dart';
+
+// Certifique-se de que este arquivo existe no seu projeto
+import 'login.dart'; 
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: '.env');
-  runApp(const TelaApp());
+  // Obrigatório ao usar métodos assíncronos (await) antes do runApp
+  WidgetsFlutterBinding.ensureInitialized(); 
+  
+  await dotenv.load();
+  
+  // Aqui estava o erro: você deve passar a sua classe TelaApp, não um MaterialApp vazio
+  runApp(const TelaApp()); 
 }
 
 // Cria a classe Tela App do tipo StatelessWidget
-
 class TelaApp extends StatelessWidget {
   const TelaApp({super.key});
 
@@ -28,7 +33,7 @@ class TelaApp extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.deepPurple,
             foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -40,7 +45,7 @@ class TelaApp extends StatelessWidget {
         splashIconSize: 200,
         splashTransition: SplashTransition.scaleTransition,
         pageTransitionType: PageTransitionType.leftToRight,
-        nextScreen: LoginPage(),
+        nextScreen: const LoginPage(), // Assumindo que LoginPage seja const
         backgroundColor: Colors.red,
       ),
     );

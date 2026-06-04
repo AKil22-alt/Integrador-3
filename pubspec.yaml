@@ -63,7 +63,7 @@ flutter:
   uses-material-design: true
   assets:
     - images/AgroGoais.png
-
+    - .env
   # To add additional assets to your application, add them below.
 
   # An image asset can refer to one or more resolution-specific "variants", see
