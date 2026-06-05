@@ -34,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     // Modo demonstração
-    if (email == 'Demonstração' && senha == '123456') {
+    if (email == 'Demonstracao' && senha == '123456') {
       await prefs.setBool('demo_mode', true);
       return null; // sucesso em modo demonstração
     }
