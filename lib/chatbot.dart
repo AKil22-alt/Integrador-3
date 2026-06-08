@@ -18,7 +18,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void _sendMessage() async {
     final apiKey = dotenv.env['LANGFLOW_API_KEY'];
     final userMessage = _controller.text.trim();
-    const String url = "http://localhost:7860/api/v1/run/d60cfa5c-700c-4a53-b2d6-8d8b1b2bc06a";
+    const String url = "http://localhost:7860/api/v1/run/e06e33f3-1295-4b0e-8eb7-81f438537e42";
 
     if (apiKey == null || apiKey.isEmpty) {
       _showError("LangFlow Api Key não encontrada no .env");
@@ -119,7 +119,11 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             CircleAvatar(
               backgroundColor: Colors.white,
-              child: Image.asset("images/logo_chat.png", height: 40),
+              child: Icon(
+                Icons.smart_toy,
+                color: Colors.green.shade800,
+                size: 28,
+              ),
             ),
             const SizedBox(width: 12),
             const Text(
