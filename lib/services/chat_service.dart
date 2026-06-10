@@ -4,13 +4,13 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class ChatService {
-  /// O endereço do Langflow deve estar em .env como LANGFLOW_URL.
+  /// O endereço do Langflow 
   static final String baseUrl = dotenv.env['LANGFLOW_URL']?.trim() ?? '';
 
   /// Endpoint Langflow.
   static const String chatEndpoint = '/api/v1/chat/completions';
 
-  /// A chave de API do Langflow/OpenAI deve estar em .env como LANGFLOW_API_KEY.
+  /// A chave de API do Langflow
   static final String? apiKey = dotenv.env['LANGFLOW_API_KEY']?.trim();
 
   static Future<String> sendMessage(String message) async {

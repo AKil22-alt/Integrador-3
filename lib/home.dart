@@ -26,7 +26,7 @@ class DashboardScreen extends StatelessWidget {
           children: [
             // DrawerHeader
             DrawerHeader(
-              decoration: BoxDecoration(color: Colors.green[700]),
+              decoration: BoxDecoration(color: Colors.green.shade700),
               child: Text(
                 'Menu',
                 style: TextStyle(
@@ -37,7 +37,7 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             ListTile(
-              leading: Icon(Icons.analytics, color: Colors.green[700]),
+              leading: Icon(Icons.analytics, color: Colors.green.shade700),
               title: const Text('Monitoramento'),
               onTap: () {
                 Navigator.pop(context);
@@ -62,7 +62,7 @@ class DashboardScreen extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: Icon(Icons.smart_toy_outlined, color: Colors.green[700]),
+              leading: Icon(Icons.smart_toy_outlined, color: Colors.green.shade700),
               title: const Text('Chatbot'),
               onTap: () {
                 Navigator.pop(context);

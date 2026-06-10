@@ -93,7 +93,7 @@ class _ColetaDadosScreenState extends State<ColetaDadosScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: Colors.teal[700],
+        backgroundColor: Colors.green.shade700,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
@@ -130,7 +130,7 @@ class _ColetaDadosScreenState extends State<ColetaDadosScreen> {
                               const SizedBox(height: 14),
                               ElevatedButton(
                                 onPressed: _loadData,
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal[700]),
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700),
                                 child: const Text('Tentar novamente'),
                               ),
                             ],
@@ -194,7 +194,7 @@ class _ColetaDadosScreenState extends State<ColetaDadosScreen> {
                         'Bomba de irrigação',
                         _readings?.pumpOn == true ? 'Ligada' : 'Desligada',
                         'Controle manual disponível na aba Acionamento',
-                        _readings?.pumpOn == true ? Colors.green : Colors.grey,
+                        _readings?.pumpOn == true ? Colors.green.shade700 : Colors.grey,
                         Icons.power,
                       ),
                       const SizedBox(height: 10),

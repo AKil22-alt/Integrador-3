@@ -29,7 +29,7 @@ class _TelaacionamentoState extends State<Telaacionamento> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_statusMessage),
-          backgroundColor: Colors.green[700],
+          backgroundColor: Colors.green.shade700,
         ),
       );
     } catch (error) {
@@ -55,7 +55,7 @@ class _TelaacionamentoState extends State<Telaacionamento> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: Colors.teal[700],
+        backgroundColor: Colors.green.shade700,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
@@ -119,7 +119,7 @@ class _TelaacionamentoState extends State<Telaacionamento> {
             ElevatedButton(
               onPressed: _loading ? null : () => _sendPumpCommand(true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[700],
+                backgroundColor: Colors.green.shade700,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
