@@ -84,7 +84,7 @@ class SensorReadings {
 }
 
 class IotService {
-  /// Atualizar esta URL para o endereço do backend NestJS.
+  //endereço do backend 
   static const String baseUrl = 'http://localhost:3000';
   static const String dataEndpoint = '/data';
 
